@@ -1,26 +1,101 @@
-#  Как работать с репозиторием финального задания
+Kittygram
 
-## Что нужно сделать
+Kittygram — веб-приложение для публикации фотографий котиков, информации о них и их достижениях.
 
-Настроить запуск проекта Kittygram в контейнерах и CI/CD с помощью GitHub Actions
+Технологии
 
-## Как проверить работу с помощью автотестов
+* Python 3.12
+* Django 5.1.1
+* Django REST Framework
+* React
+* PostgreSQL 13
+* Gunicorn
+* Nginx
+* Docker
+* Docker Compose
+* GitHub Actions
+* Ruff
 
-В корне репозитория создайте файл tests.yml со следующим содержимым:
-```yaml
-repo_owner: ваш_логин_на_гитхабе
-kittygram_domain: полная ссылка (https://доменное_имя) на ваш проект Kittygram
-taski_domain: полная ссылка (https://доменное_имя) на ваш проект Taski
-dockerhub_username: ваш_логин_на_докерхабе
-```
+Архитектура проекта
 
-Скопируйте содержимое файла `.github/workflows/main.yml` в файл `kittygram_workflow.yml` в корневой директории проекта.
+Проект состоит из четырёх сервисов:
 
-Для локального запуска тестов создайте виртуальное окружение, установите в него зависимости из backend/requirements.txt и запустите в корневой директории проекта `pytest`.
+* backend — серверная часть приложения;
+* frontend — пользовательский интерфейс;
+* db — база данных PostgreSQL;
+* gateway — веб-сервер Nginx.
 
-## Чек-лист для проверки перед отправкой задания
+Для постоянного хранения данных используются тома pg_data, static и media.
 
-- Проект Taski доступен по доменному имени, указанному в `tests.yml`.
-- Проект Kittygram доступен по доменному имени, указанному в `tests.yml`.
-- Пуш в ветку main запускает тестирование и деплой Kittygram, а после успешного деплоя вам приходит сообщение в телеграм.
-- В корне проекта есть файл `kittygram_workflow.yml`.
+Локальный запуск
+
+Клонировать репозиторий:
+
+git clone https://github.com/BigLita7/kittygram_final.git
+cd kittygram_final
+
+Создать файл переменных окружения:
+
+cp .env.example .env
+
+Заполнить необходимые переменные окружения в файле .env.
+
+Собрать и запустить контейнеры:
+
+docker compose up -d --build
+
+Выполнить миграции:
+
+docker compose exec backend python manage.py migrate
+
+Собрать статические файлы:
+
+docker compose exec backend python manage.py collectstatic --noinput
+docker compose exec backend cp -r /app/collected_static/. /backend_static/
+
+Создать администратора:
+
+docker compose exec backend python manage.py createsuperuser
+
+Приложение доступно по адресу http://localhost:9000.
+
+Панель администратора доступна по адресу http://localhost:9000/admin/.
+
+Тестирование
+
+Проверка качества Python-кода:
+
+ruff check backend/
+
+Тестирование backend:
+
+docker compose exec backend python manage.py test
+
+Тестирование frontend:
+
+docker compose run --rm --no-deps -e CI=true frontend npm test -- --watchAll=false
+
+CI/CD
+
+При отправке изменений в ветку main GitHub Actions автоматически выполняет:
+
+1. Проверку Python-кода через Ruff.
+2. Тестирование backend.
+3. Тестирование frontend.
+4. Сборку Docker-образов.
+5. Публикацию образов в Docker Hub.
+
+Публикация выполняется только после успешного прохождения проверок.
+
+Запуск готовых образов
+
+Для использования образов из Docker Hub предусмотрен файл docker-compose.production.yml.
+
+docker compose -f docker-compose.production.yml pull
+docker compose -f docker-compose.production.yml up -d
+
+При первом запуске необходимо выполнить миграции и сборку статических файлов, указав соответствующий файл Docker Compose.
+
+Остановка проекта
+
+docker compose down
