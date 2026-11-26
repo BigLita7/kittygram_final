@@ -16,7 +16,7 @@ services:
       retries: 10
 
   backend:
-    image: DOCKERHUB_LOGIN/kittygram_backend:latest
+    image: past07/kittygram_backend:latest
     env_file: .env
     depends_on:
       db:
@@ -26,13 +26,13 @@ services:
       - media:/app/media
 
   frontend:
-    image: DOCKERHUB_LOGIN/kittygram_frontend:latest
+    image: past07/kittygram_frontend:latest
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static
 
   gateway:
-    image: DOCKERHUB_LOGIN/kittygram_gateway:latest
+    image: past07/kittygram_gateway:latest
     depends_on:
       - backend
       - frontend
